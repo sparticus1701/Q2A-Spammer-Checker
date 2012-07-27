@@ -4,8 +4,8 @@
 	Walter Williams
 
 	File: qa-plugin/spammer-check-widget/spammer-check-widget.php
-	Version: 1.0
-	Date: 2011-10-21
+	Version: 2.0
+	Date: 2012-7-27
 	Description: Widget module class for spammer check
 */
 
