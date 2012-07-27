@@ -4,8 +4,8 @@
 	Walter Williams
 
 	File: qa-plugin/spammer-check-widget/spammer-check-event.php
-	Version: 1.0
-	Date: 2011-10-20
+	Version: 2.0
+	Date: 2011-7-27
 	Description: Event module class for spammer check plugin
 */
 
@@ -15,7 +15,6 @@ require_once QA_INCLUDE_DIR.'qa-app-users.php';
 require_once QA_INCLUDE_DIR.'qa-app-format.php';
 require_once QA_INCLUDE_DIR.'qa-app-emails.php';
 require_once QA_INCLUDE_DIR.'qa-app-posts.php';
-require_once QA_INCLUDE_DIR.'qa-util-emailer.php';
 require_once QA_BASE_DIR.'qa-config.php';
 
 
@@ -88,10 +87,6 @@ class spammer_check_event
 				// Delete from userpoints & userprofile tables
 				qa_db_query_sub('DELETE IGNORE FROM ^userpoints WHERE userid = ($)', $userid);
 				qa_db_query_sub('DELETE IGNORE FROM ^userprofile WHERE userid = ($)', $userid);
-
-				// Update cache_userpointscount in options table
-				$count = qa_db_query_sub("SELECT COUNT(*) AS count FROM ^userpoints");
-				qa_opt("cache_userpointscount", (int) mysql_result($count, 0));
 
 				qa_send_email(array(
 					'fromemail' => qa_opt('from_email'),
