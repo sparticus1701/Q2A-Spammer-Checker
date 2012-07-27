@@ -1,7 +1,7 @@
 <?php
 
 /*
-	Spammer Checker 1.0.0 (c) 2011, Sawtooth Software, Inc.
+	Spammer Checker 2.0.0 (c) 2012, Sawtooth Software, Inc.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -18,12 +18,12 @@
 	Plugin Name: Spammer Checker
 	Plugin URI: 
 	Plugin Description: Provides options for checking whether an IP or email is a known spammer
-	Plugin Version: 1.0
-	Plugin Date: 2011-11-14
+	Plugin Version: 2.0
+	Plugin Date: 2012-7-27
 	Plugin Author: Walter Williams
 	Plugin Author URI: 
-	Plugin License: GPLv2
-	Plugin Minimum Question2Answer Version: 1.4
+	Plugin License: 
+	Plugin Minimum Question2Answer Version: 1.5
 */
 
 
