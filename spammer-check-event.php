@@ -7,6 +7,12 @@
 	Version: 2.0
 	Date: 2011-7-27
 	Description: Event module class for spammer check plugin
+	
+	History
+	2015-03-28, Anthony
+	  - Fixed to use more efficient single queries to StopForumSpam and BotScout instead of two separate queries.
+	  - Add Logging using EventLogger if it is enabled.
+	  - Die if a spammer is detected with a terse message.   Need to improve.
 */
 
 
@@ -31,56 +37,57 @@ class spammer_check_event
 
 			$isspammer = false;
 
-			$xmlUrl = "http://www.stopforumspam.com/api?ip=" . $loginip . "&f=json";
+			$logParams = $params;
+
+			// Make only a single request to StopForumSpam for both email and ip, faster and allows more queries.  
+			// See: http://www.stopforumspam.com/usage
+			$xmlUrl = "http://www.stopforumspam.com/api?email=" . urlencode($email) . "&ip=" . $loginip . "&f=json";
 			$result = $this->GetWebPage($xmlUrl);
 			if ($result->succeeded)
 			{
+				$logParams['STOPFORUMSPAM_RESULT'] = $result->response;
 				$jobj = json_decode($result->response);
 				if ($jobj->success)
 				{
-					$isspammer |= ($jobj->ip->appears == 1 ? true : false);
+					$isSpammerIP=($jobj->ip->appears == 1 ? true : false);
+					$isSpammerEmail=($jobj->email->appears == 1 ? true : false);
+					$isspammer |= $isSpammerIP || $isSpammerEmail;
+
+					if($isSpammerIP)
+						$logParams['STOPFORUMSPAM_SPAMMER_IP'] = true;
+					if($isSpammerEmail)
+						$logParams['STOPFORUMSPAM_SPAMMER_EMAIL'] = true;
 				}
 			}
 
-			$xmlUrl = "http://botscout.com/test/?ip=" . $loginip . "&key=xxx"; // replace with your own keys
+			// Make only a single request to botscout for both email and ip, faster and allows more queries.  
+			// See: http://botscout.com/api.htm
+			$xmlUrl = "http://botscout.com/test/?multi&mail=" . urlencode($email) . "&ip=" . $loginip . "&key=XXX"; // replace with your own keys
 			$result = $this->GetWebPage($xmlUrl);
 			if ($result->succeeded)
 			{
+				$logParams['BOTSCOUT_RESULT'] = $result->response;
 				$botdata = explode('|', $result->response);
 
-				if ($botdata[0] != "!")
-				{
-					$isspammer |= ($botdata[0] == "Y" ? true : false);
+				if ($botdata[0] == "!") {
+					$logParams['BOTSCOUT_ERROR'] = true;
+				} else {
+					$isBotScoutSpammer = ($botdata[0] == "Y" ? true : false);
+					$isspammer != $isBotScoutSpammer;
+					if ($isBotScoutSpammer)
+						$logParams['BOTSCOUT_SPAMMER'] = true;
 				}
 			}
 
-
-			$xmlUrl = "http://www.stopforumspam.com/api?email=" . urlencode($email) . "&f=json";
-			$result = $this->GetWebPage($xmlUrl);
-			if ($result->succeeded)
-			{
-				$jobj = json_decode($result->response);
-
-				if ($jobj->success)
-				{
-					$isspammer |= ($jobj->email->appears == 1 ? true : false);
-				}
-			}
-
-			$xmlUrl = "http://botscout.com/test/?mail=" . urlencode($email) . "&key=xxx"; // replace with your own keys
-			$result = $this->GetWebPage($xmlUrl);
-			if ($result->succeeded)
-			{
-				$botdata = explode('|', $result->response);
-
-				if ($botdata[0] != "!")
-				{
-					$isspammer |= ($botdata[0] == "Y" ? true : false);
-				}
+			//  If the EventLogger is enabled then log the Spam Check results
+			if (qa_opt('event_logger_to_database') || qa_opt('event_logger_to_database')) {
+				$eventLogger = new qa_event_logger();
+				$eventLogger->process_event ('spamcheck_'.$isspammer, $userid, $handle, $cookieid, $logParams);
 			}
 
 			if ($isspammer) // Automatically delete the spammer user
 			{
+
 				// Delete from users table
 				qa_db_query_sub('DELETE IGNORE FROM ^users WHERE userid = ($)', $userid);
 
@@ -97,6 +104,12 @@ class spammer_check_event
 					'body' => "Your registration has been rejected because your IP address or email has been reported as used for sending spam.  If you feel this is in error, please contact your service provider.",
 					'html' => false,
 				));
+
+
+				// At this point the user that QA is expecting no longer exists so it will blow up.
+				// need to come up with something nicer but that is for later..
+				echo "Your credentials appear to be associated with a spam user.  Good bye.";
+				die();
 			}
 		}
 	}

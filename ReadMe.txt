@@ -1,4 +1,6 @@
-*** Please do not post problems with this plugin to our forum.  The forum is only for our retail software.  Post any problems at github.
+This is a FORK of: https://github.com/sawtoothsoftware/Q2A-Spammer-Checker
+
+Until the changes are merge you can do the following..
 
 1. Create a spammer-checker folder in the qa-plugin folder
 2. Place all files in the spammer-checker folder
